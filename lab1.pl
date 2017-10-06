@@ -50,9 +50,9 @@ last(X, [_|T]) :- last(X, T).
 verify(InputFileName) :-
   see(InputFileName),
   read(Prems), read(Goal), read(Proof),
-  seen,
-  %last(WantedGoal, Proof), Goal == WantedGoal, % check that goal is in last row
-  valid_proof(Prems, Goal, Proof, []).
+  seen, !,
+  %last(WantedGoal, Proof), Goal == WantedGoal, !, % check that goal is in last row
+  valid_proof(Prems, Goal, Proof, []), !.
 
 /*
   valid_proof(Prems, Goal, Proof, Knowledge)
@@ -63,8 +63,8 @@ verify(InputFileName) :-
 */
 % base case: evalute to true if the last row is valid based
 % on the knowlege and premisses we have and formula unifies with our goal.
-valid_proof(Prems, Goal, [RowNum, Goal, Rule], Knowledge) :-
-  valid_rule(Prems, [RowNum, Goal, Rule], Knowledge).
+valid_proof(Prems, Goal, [[RowNum, Goal, Rule]], Knowledge) :-
+  valid_rule(Prems, [RowNum, Goal, Rule], Knowledge), !.
 % recursion: see if the current row is valid based on premisses and collected knowledge
 valid_proof(Prems, Goal, [ProofHead|ProofTail], Knowledge) :-
   valid_rule(Prems, ProofHead, Knowledge),
