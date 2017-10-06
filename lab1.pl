@@ -31,7 +31,8 @@ verify(InputFileName) :-
   %last(WantedGoal, Proof), Goal == WantedGoal, % check that goal is in last row
   valid_proof(Prems, Goal, Proof, []).
 
-valid_proof(Prems, Goal, [_, ], Knowledge) :- 
+valid_proof(Prems, Goal, [RowNum, Goal, Rule], Knowledge) :-
+  valid_rule(Prems, [RowNum, Goal, Rule], Knowledge).
 valid_proof(Prems, Goal, [ProofHead|ProofTail], Knowledge) :-
   valid_rule(Prems, ProofHead, Knowledge),
   valid_proof(Prems, Goal, ProofTail, Knowledge).
