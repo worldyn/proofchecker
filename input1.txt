@@ -1,3 +1,7 @@
-[p].
-p.
-[[1, p, premise]].
+[imp(p, q), p].
+q.
+[
+[1, imp(p,q), premise],
+[2, p, premise],
+[3, q, impel(2,1)]
+].
