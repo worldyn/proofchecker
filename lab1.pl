@@ -39,7 +39,7 @@
 
 % connectives
 neg(A) :- \+ A.
-imp(A, B) :- neg(A , neg(B)). % A -> B logically equivalent to not(A and not(B))
+imp(A, B) :- neg(A , neg(B)). % A -> B logically equivalent to neg(A and neg(B))
 and(A,B) :- A, B.
 or(A, B) :- A ; B.
 
@@ -65,13 +65,19 @@ verify(InputFileName) :-
 % on the knowlege and premisses we have and formula unifies with our goal.
 valid_proof(Prems, Goal, [[RowNum, Goal, Rule]], Knowledge) :-
   valid_rule(Prems, [RowNum, Goal, Rule], Knowledge), !.
+
+% if the current row is a box that starts with an assumption it recursively
+% be treated as a proof itself. The Goal of the box will be the formula in last row inside it.
+valid_proof(Prems, Goal, [ [[RowStart,AssumFormula,assumption]|RestOfBox] |Rest], Knowledge) :-
+  last([RowGoal,GoalFormula, GoalRule],RestOfBox),
+  valid_proof([AssumFormula|Prems],GoalFormula, RestOfBox, Knowledge),
+  valid_proof(Prems, Goal, Rest, [[ [RowStart,AssumFormula,assumption],[RowGoal,GoalFormula, GoalRule] ]|Knowledge]).
+
 % recursion: see if the current row is valid based on premisses and collected knowledge
 valid_proof(Prems, Goal, [ProofHead|ProofTail], Knowledge) :-
   valid_rule(Prems, ProofHead, Knowledge),
   % if row is valid then add to Knowledge
   valid_proof(Prems, Goal, ProofTail, [ProofHead|Knowledge]).
-
-% TODO: assumption/box
 
 /*
 valid_rule(Prems, ProofRow, Rule)
@@ -132,23 +138,37 @@ valid_rule(Prems, [_, neg(neg(P)), negnegint(X)], Knowledge) :-
   member([X, P, _], Knowledge) ;
   member(P, Prems).
 
-% MT: modus tempus for not(P) where you have P->Q at row X or in premisses and not(Q) at row Y or in premisses
+% MT: modus tempus for neg(P) where you have P->Q at row X or in premisses and neg(Q) at row Y or in premisses
 valid_rule(Prems, [_, neg(P), mt(X,Y)], Knowledge) :-
   ( member([X, imp(P,Q), _], Knowledge) ; member(imp(P,Q), Prems) ),
-  ( member([Y, not(Q), _], Knowledge) ; member(not(Q), Prems) ).
+  ( member([Y, neg(Q), _], Knowledge) ; member(neg(Q), Prems) ).
 
-% NEGEL: negation elimination for contradiction cont and need a P at row X or in premisses and not(P) at row Y or in premisses
+% NEGEL: negation elimination for contradiction cont and need a P at row X or in premisses and neg(P) at row Y or in premisses
 valid_rule(Prems, [_, cont, negel(X,Y)], Knowledge) :-
   ( member([X, P, _], Knowledge) ; member(P, Prems) ),
-  ( member([Y, not(P), _], Knowledge) ; member(not(P), Prems) ).
+  ( member([Y, neg(P), _], Knowledge) ; member(neg(P), Prems) ).
 
 % CONTEL: contradiction elimination for any formula where you have a contradiction cont at row X.
 valid_rule(_, [_, _, contel(X)], Knowledge) :-
   member([X, cont, _], Knowledge).
 
-% assumption / box
+
+% OREL: or elimination for C where you have a or(A,B) at row X or in premisses and two boxes where both concludes to C
+valid_rule(Prems, [_, C, orel(X,Y,U,V,W)], Knowledge) :-
+  ( member([X, or(A,B), _], Knowledge) ; member(or(A,B), Prems) ),
+  member([ [Y, A, assumption], [U, C, _] ], Knowledge),
+  member([ [V, B, assumption], [W, C, _] ], Knowledge).
+
+% IMPINT: implication introduction, introduce a A->B if there is a box where you get B from A.
+valid_rule(_, [_, imp(A,B), impint(X,Y)], Knowledge) :-
+  member([ [X, A, assumption], [Y, B, _] ], Knowledge).
+
+% NEGINT: negation introduction, introduce a neg(P) if there is a box at row X that assumes P and gets a contradiction at row Y
+valid_rule(_, [_, neg(P), negint(X,Y)], Knowledge) :-
+  member([ [X, P, assumption], [Y, cont, _] ], Knowledge).
+
+% PBC: get P if there is a box that assumes neg(P) at row X and gets a contradiction at row Y
+valid_rule(_, [_, P, pbc(X,Y)], Knowledge) :-
+  member([ [X, neg(P), assumption], [Y, cont, _] ], Knowledge).
+
 % COPY: copy P from row X
-% OREL: or elimination
-% IMPINT: implication introduction
-% NEGINT: negation introduction
-% PBC: pbc
