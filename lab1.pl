@@ -163,7 +163,6 @@ valid_rule(_, [_, neg(P), negint(X,Y)], Knowledge) :-
 valid_rule(_, [_, P, pbc(X,Y)], Knowledge) :-
   member([ [X, neg(P), assumption], [Y, cont, _] ], Knowledge).
 
-% TODO: fix correct copy!!! Needs to be in same box or above. Can not be from external separate box
 % COPY: copy formula P from row X
 valid_rule(_,[_, P, copy(X)] , Knowledge) :-
   member([X, P, _], Knowledge).
