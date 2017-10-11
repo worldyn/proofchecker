@@ -43,6 +43,7 @@ imp(A, B) :- neg(A , neg(B)). % A -> B logically equivalent to neg(A and neg(B))
 and(A,B) :- A, B.
 or(A, B) :- A ; B.
 
+% last(LastElement, List)
 last(X,[X]).
 last(X, [_|T]) :- last(X, T).
 
